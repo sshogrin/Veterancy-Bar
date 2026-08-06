@@ -166,20 +166,26 @@ function VeterancyBar:ToggleLock()
     VeterancyBar:SetWindowLock(not VeterancyBar.savedVars.isLocked)
 end
 
-local function UpdateWindowVisibility()
-    if not VeterancyBarWindow then return end -- Avoid execution if UI element doesn't exist
+--Show or Hide the Window based on PvP status and user preference
+function VeterancyBar:UpdateWindowVisibility()
+    if not VeterancyBarWindow then return end 
 
-    if VeterancyBar.savedVars.onlyInPvp then
-        local isInPvp = IsPlayerInAvAWorld() or IsInCyrodiil()
+    local onlyInPvp = false
+    if VeterancyBar.savedVars and VeterancyBar.savedVars.onlyInPvp then
+        onlyInPvp = true
+    end
+
+    if onlyInPvp then
+        local isInPvp = IsPlayerInAvAWorld() or IsActiveWorldBattleground()
         VeterancyBarWindow:SetHidden(not isInPvp)
     else
-        VeterancyBarWindow:SetHidden(false) -- Keep visible always if toggle is disabled
+        VeterancyBarWindow:SetHidden(false) 
     end
-end
+end 
 
 -- Event binding for transition tracking
-local function OnZoneChanged(eventCode)
-    UpdateWindowVisibility()
+function VeterancyBar:OnZoneChanged(eventCode)
+    VeterancyBar:UpdateWindowVisibility()
 end
 
 -- Apply Progress Bar Color
@@ -237,7 +243,9 @@ function VeterancyBar:Initialize()
                 VeterancyBar.savedVars.fontColor.B,
                 VeterancyBar.savedVars.fontColor.A
                 )
-    
+    EVENT_MANAGER:RegisterForEvent("VeterancyBar_Event", EVENT_PLAYER_ACTIVATED, function(eventCode)
+        VeterancyBar:OnZoneChanged(eventCode)
+    end)
     VeterancyBar:SetWindowLock(VeterancyBar.savedVars.isLocked)
 end
 
@@ -270,9 +278,8 @@ function initializeVeterancyBarOptions()
             getFunc = function() return VeterancyBar.savedVars.onlyInPvp end,
             setFunc = function(value) 
                 VeterancyBar.savedVars.onlyInPvp = value
-                UpdateWindowVisibility() -- Immediately update UI when checked/unchecked
+                VeterancyBar:UpdateWindowVisibility() -- Immediately update UI when checked/unchecked
             end,
-            default = VeterancyBar.onlyInPvp,
         },
     [3] = {
         type = "colorpicker",
@@ -356,7 +363,7 @@ local function OnLoaded(_, addonName)
     VeterancyBar.CreateUI()
     VeterancyBar.Update()
     VeterancyBar:Initialize()
-    UpdateWindowVisibility()
+    
 
     EVENT_MANAGER:RegisterForEvent(ADDON_NAME, EVENT_REWARD_TRACK_PROGRESS_GAINED, OnRewardTrackProgress)
 
