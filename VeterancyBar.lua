@@ -5,13 +5,14 @@ local VeterancyBar = {
     bar = nil,
     label = nil,
     savedVars = nil,
-    version = "1.3.0",
+    version = "1.4.0",
 }
 
 VeterancyBar.defaults = {
     x = 200,
     y = 200,
     isLocked = false,
+    onlyInPvp = true,
     progressColor = {
         R = 1,
         G = 1,
@@ -165,6 +166,22 @@ function VeterancyBar:ToggleLock()
     VeterancyBar:SetWindowLock(not VeterancyBar.savedVars.isLocked)
 end
 
+local function UpdateWindowVisibility()
+    if not VeterancyBarWindow then return end -- Avoid execution if UI element doesn't exist
+
+    if VeterancyBar.savedVars.onlyInPvp then
+        local isInPvp = IsPlayerInAvAWorld() or IsInCyrodiil()
+        VeterancyBarWindow:SetHidden(not isInPvp)
+    else
+        VeterancyBarWindow:SetHidden(false) -- Keep visible always if toggle is disabled
+    end
+end
+
+-- Event binding for transition tracking
+local function OnZoneChanged(eventCode)
+    UpdateWindowVisibility()
+end
+
 -- Apply Progress Bar Color
 function VeterancyBar:ApplyBarColor()
     if VeterancyBar.bar then
@@ -220,7 +237,8 @@ function VeterancyBar:Initialize()
                 VeterancyBar.savedVars.fontColor.B,
                 VeterancyBar.savedVars.fontColor.A
                 )
-     VeterancyBar:SetWindowLock(VeterancyBar.savedVars.isLocked)
+    
+    VeterancyBar:SetWindowLock(VeterancyBar.savedVars.isLocked)
 end
 
 -- Settings Panel
@@ -246,6 +264,17 @@ function initializeVeterancyBarOptions()
         setFunc = function(value) VeterancyBar:SetWindowLock(value) end,
         },
     [2] = {
+         type = "checkbox",
+            name = "Only Display Window in PvP Zones",
+            tooltip = "When enabled, this window automatically vanishes unless you are in Cyrodiil, Imperial City, or Battlegrounds.",
+            getFunc = function() return VeterancyBar.savedVars.onlyInPvp end,
+            setFunc = function(value) 
+                VeterancyBar.savedVars.onlyInPvp = value
+                UpdateWindowVisibility() -- Immediately update UI when checked/unchecked
+            end,
+            default = VeterancyBar.onlyInPvp,
+        },
+    [3] = {
         type = "colorpicker",
         name = "Progress Bar Color",
         tooltip = "Select the color for the progress bar.",
@@ -260,7 +289,7 @@ function initializeVeterancyBarOptions()
             VeterancyBar:ApplyBarColor() 
         end
         },
-    [3] = {
+    [4] = {
         type = "colorpicker",
         name = "Background Bar Color",
         tooltip = "Select the color for the background.",
@@ -275,7 +304,7 @@ function initializeVeterancyBarOptions()
             VeterancyBar:UpdateBackgroundColor()
         end,
         },
-    [4] = {
+    [5] = {
         type = "colorpicker",
         name = "Font Color",
         tooltip = "Select the color for the Font.",
@@ -327,7 +356,8 @@ local function OnLoaded(_, addonName)
     VeterancyBar.CreateUI()
     VeterancyBar.Update()
     VeterancyBar:Initialize()
-    
+    UpdateWindowVisibility()
+
     EVENT_MANAGER:RegisterForEvent(ADDON_NAME, EVENT_REWARD_TRACK_PROGRESS_GAINED, OnRewardTrackProgress)
 
     EVENT_MANAGER:RegisterForEvent(ADDON_NAME, EVENT_PLAYER_ACTIVATED, RefreshAfterActivation)
