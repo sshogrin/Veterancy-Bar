@@ -5,4 +5,4 @@
 ## DependsOn: LibAddonMenu-2.0>=43
 ## SavedVariables: VeterancyBarSavedVariables
 
-VeterancyBarOptions.lua
+VeterancyBar.lua
