@@ -5,7 +5,7 @@ local VeterancyBar = {
     bar = nil,
     label = nil,
     savedVars = nil,
-    version = "1.2.0",
+    version = "1.3.0",
 }
 
 VeterancyBar.defaults = {
