@@ -11,17 +11,24 @@ local VeterancyBar = {
 VeterancyBar.defaults = {
     x = 200,
     y = 200,
+    isLocked = false,
     progressColor = {
-    R = 1,
-    G = 1,
-    B = 0,
-    A = 1
+        R = 1,
+        G = 1,
+        B = 0,
+        A = 1
     },
     bgColor = {
-    R = 1,
-    G = 1,
-    B = 1,
-    A = 1
+        R = 1,
+        G = 1,
+        B = 1,
+        A = 1
+    },
+    fontColor = {
+        R = 0.05,
+        G = 0.05,
+        B = 0.05,
+        A = 1
     }
 }
 ------------------------------------------------------------
@@ -116,7 +123,7 @@ function VeterancyBar.CreateUI()
     VeterancyBar.label:SetFont("ZoFontGameMedium")
     VeterancyBar.label:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
     VeterancyBar.label:SetVerticalAlignment(TEXT_ALIGN_CENTER)
-    VeterancyBar.label:SetColor(0.05, 0.05, 0.05, 1)
+    VeterancyBar.label:SetColor(r,g,b,a)
 
     --------------------------------------------------------
     -- Drag control
@@ -142,6 +149,22 @@ function VeterancyBar.CreateUI()
     end)
 end
 
+--Set Window Lock
+function VeterancyBar:SetWindowLock(shouldLock)
+    VeterancyBar.savedVars.isLocked = shouldLock
+    local canMove = not shouldLock
+    
+    -- Target your specific TopLevelControl
+    if VeterancyBarWindow then
+        VeterancyBarWindow:SetMovable(canMove)
+        VeterancyBarWindow:SetMouseEnabled(canMove)
+    end
+end
+
+function VeterancyBar:ToggleLock()
+    VeterancyBar:SetWindowLock(not VeterancyBar.savedVars.isLocked)
+end
+
 -- Apply Progress Bar Color
 function VeterancyBar:ApplyBarColor()
     if VeterancyBar.bar then
@@ -161,6 +184,23 @@ function VeterancyBar:UpdateBackgroundColor()
     bg:SetCenterColor(VeterancyBar.savedVars.bgColor.R, VeterancyBar.savedVars.bgColor.G, VeterancyBar.savedVars.bgColor.B, VeterancyBar.savedVars.bgColor.A)
 end
 
+-- Apply Font Color
+function VeterancyBar:ApplyFontColor()
+    if VeterancyBar.label then
+        VeterancyBar.label:SetColor(
+            VeterancyBar.savedVars.fontColor.R,
+            VeterancyBar.savedVars.fontColor.G,
+            VeterancyBar.savedVars.fontColor.B,
+            VeterancyBar.savedVars.fontColor.A
+        )
+    end
+end
+
+function VeterancyBar:UpdateFontColor()
+    if not VeterancyBar.label then return end
+    VeterancyBar.label:SetColor(VeterancyBar.savedVars.fontColor.R, VeterancyBar.savedVars.fontColor.G, VeterancyBar.savedVars.fontColor.B, VeterancyBar.savedVars.fontColor.A)
+end
+
 function VeterancyBar:Initialize()
     VeterancyBar:UpdateBackgroundColor(
                 VeterancyBar.savedVars.bgColor.R, 
@@ -173,7 +213,14 @@ function VeterancyBar:Initialize()
                 VeterancyBar.savedVars.progressColor.G, 
                 VeterancyBar.savedVars.progressColor.B, 
                 VeterancyBar.savedVars.progressColor.A
-            )
+                )
+    VeterancyBar:ApplyFontColor(
+                VeterancyBar.savedVars.fontColor.R,
+                VeterancyBar.savedVars.fontColor.G,
+                VeterancyBar.savedVars.fontColor.B,
+                VeterancyBar.savedVars.fontColor.A
+                )
+     VeterancyBar:SetWindowLock(VeterancyBar.savedVars.isLocked)
 end
 
 -- Settings Panel
@@ -192,10 +239,17 @@ function initializeVeterancyBarOptions()
 
     local optionsTable = {
     [1] = {
-           type = "colorpicker",
-           name = "Progress Bar Color",
-           tooltip = "Select the color for the progress bar.",
-           getFunc = function() 
+        type = "checkbox",
+        name = "Lock Window Position",
+        tooltip = "Check this to lock the window in place to prevent moving it with the mouse.",
+        getFunc = function() return VeterancyBar.savedVars.isLocked end,
+        setFunc = function(value) VeterancyBar:SetWindowLock(value) end,
+        },
+    [2] = {
+        type = "colorpicker",
+        name = "Progress Bar Color",
+        tooltip = "Select the color for the progress bar.",
+        getFunc = function() 
             return VeterancyBar.savedVars.progressColor.R, VeterancyBar.savedVars.progressColor.G, VeterancyBar.savedVars.progressColor.B, VeterancyBar.savedVars.progressColor.A 
         end,
         setFunc = function(r, g, b, a)
@@ -205,12 +259,12 @@ function initializeVeterancyBarOptions()
             VeterancyBar.savedVars.progressColor.A = a
             VeterancyBar:ApplyBarColor() 
         end
-      },
-    [2] = {
-           type = "colorpicker",
-           name = "Background Bar Color",
-           tooltip = "Select the color for the background.",
-           getFunc = function() 
+        },
+    [3] = {
+        type = "colorpicker",
+        name = "Background Bar Color",
+        tooltip = "Select the color for the background.",
+        getFunc = function() 
             return VeterancyBar.savedVars.bgColor.R, VeterancyBar.savedVars.bgColor.G, VeterancyBar.savedVars.bgColor.B, VeterancyBar.savedVars.bgColor.A 
         end,
         setFunc = function(r, g, b, a) 
@@ -220,7 +274,22 @@ function initializeVeterancyBarOptions()
             VeterancyBar.savedVars.bgColor.A = a
             VeterancyBar:UpdateBackgroundColor()
         end,
-      },  
+        },
+    [4] = {
+        type = "colorpicker",
+        name = "Font Color",
+        tooltip = "Select the color for the Font.",
+        getFunc = function() 
+            return VeterancyBar.savedVars.fontColor.R, VeterancyBar.savedVars.fontColor.G, VeterancyBar.savedVars.fontColor.B, VeterancyBar.savedVars.fontColor.A 
+        end,
+        setFunc = function(r, g, b, a)
+            VeterancyBar.savedVars.fontColor.R = r
+            VeterancyBar.savedVars.fontColor.G = g
+            VeterancyBar.savedVars.fontColor.B = b
+            VeterancyBar.savedVars.fontColor.A = a
+            VeterancyBar:UpdateFontColor() 
+        end
+        }, 
     }
 
     local LAM = LibAddonMenu2
